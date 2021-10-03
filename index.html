@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>by larinax999</title>
+	</head>
+	<body>
+		<button id="start_button" onclick="recognition.start()" style="display: inline-block;">start</button>
+		<button id="stop_button" onclick="recognition.stop()" style="display: inline-block;">stop</button>
+		<input type="checkbox" id="auto_start">
+		<button id="re_button" onclick="reconn()" style="display: inline-block;">reconnect server</button>
+		<p id="status">status : Hello</p>
+		<p id="msg">msg : </p>
+		<script>
+			var recognition = new webkitSpeechRecognition();
+			var socket = new WebSocket('ws://127.0.0.1:3000');
+			
+			recognition.continuous = true;
+			recognition.interimResults = true;
+			recognition.lang = "th-TH";
+			//recognition.lang = "en-US";
+			
+			//var final_transcript = "";
+			var interim_transcript = "";
+			
+			function reconn() {
+				socket = new WebSocket('ws://127.0.0.1:3000');
+			}
+			
+			socket.addEventListener('error', function (event) {
+				document.getElementById("status").innerHTML = "status : error";
+			});
+			
+			recognition.onstart = function() {
+				console.log("start");
+				document.getElementById("status").innerHTML = "status : started";
+			};
+
+			recognition.onerror = function(event) {
+				console.log("err");
+			};
+
+			recognition.onend = function() {
+				console.log("end");
+				document.getElementById("status").innerHTML = "status : stoped" ;
+				if (document.getElementById("auto_start").checked){
+					setTimeout(function(){ recognition.start(); }, 400);
+				}
+			};
+
+			recognition.onresult = function(event) {
+				console.log(event)
+				interim_transcript = "";
+				for (var i = event.resultIndex; i < event.results.length; ++i) {
+				  if (event.results[i].isFinal) interim_transcript += event.results[i][0].transcript;
+				}
+				//console.log("1" + final_transcript)
+				console.log("msg : " + interim_transcript);
+				if (interim_transcript == "" || interim_transcript == null) return;
+				document.getElementById("msg").innerHTML = "msg : " + interim_transcript;
+				socket.send(interim_transcript)
+				//fetch("/",{method:"POST",body:JSON.stringify({msg:interim_transcript})});
+			}
+		</script>
+	</body>
+</html>
